@@ -1,3 +1,4 @@
+import axios from "axios";
 
 export type Counterparty = {
     id?: string,
@@ -7,50 +8,21 @@ export type Counterparty = {
     kpp: string,
 };
 
-const data = [
-    createData('1', 'John', '12314141', 'afsfafaf', 'fasfsafaf'),
-    createData('2', 'John', '12314141', 'afsfafaf', '41241441'),
-] as Counterparty[];
+const url = 'http://localhost:3000'
 
-function createData(
-    id: string,
-    name: string,
-    inn: string,
-    address: string,
-    kpp: string,
-) {
-    return { id, name, inn, address, kpp} as Counterparty;
+export const getCounterparty = async () => {
+    return axios.get(url+'/counterparty')
 }
 
-export const getCounterparty = () => {
-    let counterparty = JSON.parse(localStorage.getItem('counterparty'));
-
-    if (counterparty === null || counterparty.length === 0) {
-        counterparty = data;
-        localStorage.setItem('counterparty', JSON.stringify(counterparty));
-    }
-
-    return counterparty;
+export const saveCounterparty = async (val : Counterparty) => {
+    return axios.post(url + '/counterparty', val)
 }
 
-export const saveCounterparty = (val : Counterparty) => {
-    let counterparty = JSON.parse(localStorage.getItem('counterparty'));
-    val.id = crypto.randomUUID();
-    counterparty.push(val);
-
-    localStorage.setItem('counterparty', JSON.stringify(counterparty));
-}
-
-export const editCounterParty = (editedVal: Counterparty) => {
-    let counterparty: Counterparty[] = JSON.parse(localStorage.getItem('counterparty'));
-    console.log(counterparty)
-    counterparty.forEach((v, i) => {
-        if (v.id === editedVal.id) {
-            counterparty[i] = editedVal;
-            return;
-        }
-    });
-    
-    localStorage.setItem('counterparty', JSON.stringify(counterparty));
+export const editCounterparty = async (editedVal: Counterparty) => {
+    axios.put(url + `/counterparty/${editedVal.id}`, {name: editedVal.name, inn: editedVal.inn, address: editedVal.address, kpp: editedVal.kpp})
 };
+
+export const deleteCounterparty = async (id: string) => {
+    axios.delete(url + `/counterparty/${id}`)
+}
 
