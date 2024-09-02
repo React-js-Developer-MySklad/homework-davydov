@@ -5,18 +5,20 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import { Counterparty, editCounterParty, getCounterparty, saveCounterparty } from './../../api/counterpartyApi';
+import { Counterparty} from './../../api/counterpartyApi';
+import { useCounterparty } from '../../hooks/useCounterparty/counterparty.hook';
 
 
 type ModalProps = {
   selected?: Counterparty;
   setSelected: (val?: Counterparty) => void;
-  setCounterparty: (val: Counterparty[]) => void;
 }
 
 export const Modal: FC<ModalProps> = (props: ModalProps) => {
-  const [open, setOpen] = useState(false);
 
+  const context = useCounterparty()
+
+  const [open, setOpen] = useState(false);
   const [val, setVal] = useState<Counterparty>({name: '', inn: '', address: '', kpp: ''})
 
   useEffect(() => {
@@ -33,7 +35,6 @@ export const Modal: FC<ModalProps> = (props: ModalProps) => {
     setOpen(false);
     props.setSelected(undefined);
     setVal({name: '', inn: '', address: '', kpp: ''})
-    props.setCounterparty(getCounterparty())
   };
 
   return (
@@ -50,9 +51,9 @@ export const Modal: FC<ModalProps> = (props: ModalProps) => {
             event.preventDefault();
             
             if (props.selected) {
-              editCounterParty({id: props.selected.id, name: val.name, inn: val.inn, address: val.address, kpp: val.kpp})
+              context.editCounterparty({id: props.selected.id, name: val.name, inn: val.inn, address: val.address, kpp: val.kpp})
             } else {
-              saveCounterparty({id: undefined, name: val.name, inn: val.inn, address: val.address, kpp: val.kpp})
+              context.saveCounterparty({id: undefined, name: val.name, inn: val.inn, address: val.address, kpp: val.kpp})
             }
             
             handleClose();
