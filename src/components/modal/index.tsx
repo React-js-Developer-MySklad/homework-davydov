@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
@@ -7,6 +7,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import { Counterparty} from './../../api/counterpartyApi';
 import { useCounterparty } from '../../hooks/useCounterparty/counterparty.hook';
+import { Field, Form } from 'react-final-form';
 
 
 type ModalProps = {
@@ -16,14 +17,15 @@ type ModalProps = {
 
 export const Modal: FC<ModalProps> = (props: ModalProps) => {
 
-  const context = useCounterparty()
+  const context = useCounterparty();
 
   const [open, setOpen] = useState(false);
-  const [val, setVal] = useState<Counterparty>({name: '', inn: '', address: '', kpp: ''})
+
+  const [values, setValues] = useState<Counterparty>()
 
   useEffect(() => {
     if (props.selected) {
-      setVal(props.selected)
+      setValues(props.selected)
     }
   }, [props.selected])
 
@@ -34,102 +36,161 @@ export const Modal: FC<ModalProps> = (props: ModalProps) => {
   const handleClose = () => {
     setOpen(false);
     props.setSelected(undefined);
-    setVal({name: '', inn: '', address: '', kpp: ''})
+    setValues({name: '', inn: '', address: '', kpp: ''})
   };
+
+  const onSubmit = (val: Counterparty) => {
+      if (props.selected) {
+        context.editCounterparty({id: props.selected.id, name: val.name, inn: val.inn, address: val.address, kpp: val.kpp})
+      } else {
+        context.saveCounterparty({id: undefined, name: val.name, inn: val.inn, address: val.address, kpp: val.kpp})
+      }
+      handleClose();
+  }
+
 
   return (
     <div style={{marginBottom: '1rem'}}>
       <Button variant="contained" onClick={handleClickOpen}>
         Добавить
       </Button>
-      <Dialog
-        open={open || props.selected !== undefined}
-        onClose={handleClose}
-        PaperProps={{
-          component: 'form',
-          onSubmit: (event: React.FormEvent<HTMLFormElement>) => {
-            event.preventDefault();
-            
-            if (props.selected) {
-              context.editCounterparty({id: props.selected.id, name: val.name, inn: val.inn, address: val.address, kpp: val.kpp})
-            } else {
-              context.saveCounterparty({id: undefined, name: val.name, inn: val.inn, address: val.address, kpp: val.kpp})
-            }
-            
-            handleClose();
-          },
-        }}
-      >
-        <DialogTitle>Добавить новую запись</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            required
-            margin="dense"
-            id="name"
-            name="name"
-            label="Имя"
-            type="text"
-            fullWidth
-            value={val.name}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              setVal({...val, name: e.target.value})
-            }}
-            variant="standard"
-          />
-        <TextField
-            autoFocus
-            required
-            margin="dense"
-            id="inn"
-            name="inn"
-            label="ИНН"
-            type="text"
-            fullWidth
-            value={val.inn}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              setVal({...val, inn: e.target.value})
-            }}
-            variant="standard"
-          />
-       <TextField
-            autoFocus
-            required
-            margin="dense"
-            id="kpp"
-            name="kpp"
-            label="КПП"
-            type="text"
-            fullWidth
-            value={val.kpp}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              setVal({...val, kpp: e.target.value})
-            }}
-            variant="standard"
-          />
-       <TextField
-            autoFocus
-            required
-            margin="dense"
-            id="address"
-            name="address"
-            label="Адрес"
-            type="text"
-            fullWidth
-            multiline
-            value={val.address}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              setVal({...val, address: e.target.value})
-            }}
+      <Form onSubmit={onSubmit} initialValues={values}>
+        {formProps => (
+          <Dialog
+            open={open || props.selected !== undefined}
+            onClose={handleClose}
+            component={'form'}
+            onSubmit={formProps.handleSubmit}
+          >
+            <DialogTitle>{props.selected ? 'Редактировать запись' : 'Добавить новую запись'}</DialogTitle>
+            <DialogContent>
+              <Field 
+                name='name'
+                validate={(value: string, allValues: Counterparty, meta) => {
+                  if (value && /\d/.test(value)) {
+                      return {message: "Имя должно содержать только буквы"}
+                  }
+                  return undefined;
+                }}
+              >
+              {props => (
+                <TextField
+                  autoFocus
+                  required
+                  margin="dense"
+                  id="name"
+                  name={props.input.name}
+                  label="Имя"
+                  type="text"
+                  fullWidth
+                  value={props.input.value}
+                  onChange={props.input.onChange}
+                  error={props.meta.error}
+                  helperText={props.meta.error?.message}
+                  variant="standard"
+                />
+              )}
+              </Field>
+              <Field 
+                name='inn'
+                validate={(value: string, allValues: Counterparty, meta) => {
+                  if (value && /[a-zA-Z]/g.test(value)) {
+                      return {message: "ИНН должен содержать только цифры"}
+                  }
+                  if (value && value.length !== 10) {
+                    return {message: "ИНН должен содержать 10 цифр"}
+                  }
+                  return undefined;
+                }}
+              >
+                {props => (
+                  <TextField
+                    autoFocus
+                    required
+                    margin="dense"
+                    id="inn"
+                    name={props.input.name}
+                    label="ИНН"
+                    type="text"
+                    fullWidth
+                    value={props.input.value}
+                    onChange={props.input.onChange}
+                    error={props.meta.error}
+                    helperText={props.meta.error?.message}
+                    variant="standard"
+                  />
+                )}
+              </Field>
+              <Field
+                name='kpp'
+                validate={(value: string, allValues: Counterparty, meta) => {
+                    if (value && /[a-zA-Z]/g.test(value)) {
+                        return {message: "КПП должен содержать только цифры"}
+                    }
+                    if (value && value.length !== 9) {
+                      return {message: "КПП должен содержать 9 цифр"}
+                    }
+                    return undefined;
+                }}
+              >
+                {props => (
+                  <TextField
+                    autoFocus
+                    required
+                    margin="dense"
+                    id="kpp"
+                    name={props.input.name}
+                    label="КПП"
+                    type="text"
+                    fullWidth
+                    value={props.input.value}
+                    onChange={props.input.onChange}
+                    error={props.meta.error}
+                    helperText={props.meta.error?.message}
+                    variant="standard"
+                  />
+                )}
+              </Field>
+              <Field
+                name='address'
+                validate={(value: string, allValues: Counterparty, meta) => {
+                    if (value && value.length === 0) {
+                        return {message: "Поле 'Адрес' обязательное"}
+                    }
+                    if (value && value.length > 128) {
+                      return {message: "Превышен лимит поля. Сократите адрес"}
+                    }
+                    return undefined;
+                }}
+              >
+                {props => (
+                  <TextField
+                    autoFocus
+                    required
+                    margin="dense"
+                    id="address"
+                    name={props.input.name}
+                    label="Адрес"
+                    type="text"
+                    fullWidth
+                    value={props.input.value}
+                    onChange={props.input.onChange}
+                    error={props.meta.error}
+                    helperText={props.meta.error?.message}
+                    variant="standard"
+                    multiline
+                  />
+                )}
+              </Field>
+            </DialogContent>
+            <DialogActions>
+              <Button type="submit">{props.selected ? 'Изменить' : 'Создать'}</Button>
+              <Button onClick={handleClose}>Отменить</Button>
+            </DialogActions>
+          </Dialog>
 
-            variant="standard"
-          />
-        </DialogContent>
-        <DialogActions>
-        <Button type="submit">{props.selected ? 'Изменить' : 'Создать'}</Button>
-          <Button onClick={handleClose}>Отменить</Button>
-        </DialogActions>
-      </Dialog>
+        )}
+      </Form>
     </div>
   );
 }
