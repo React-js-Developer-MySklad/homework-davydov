@@ -9,17 +9,18 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Modal } from '../modal';
-import { Counterparty, getCounterparty } from '../../api/counterpartyApi';
+import { Counterparty} from '../../api/counterpartyApi';
+import { useCounterparty} from '../../hooks/useCounterparty/counterparty.hook';
 
 
 export const Main: FC = () => {
   
-  const [counterparty, setCounterparty] = useState<Counterparty[]>(getCounterparty());
+  const context = useCounterparty()
   const [selected, setSelected] = useState<Counterparty | undefined>()
 
   return (
     <div className={css.container}>
-      <Modal selected={selected} setSelected={setSelected} setCounterparty={setCounterparty}/>
+      <Modal selected={selected} setSelected={setSelected}/>
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
@@ -33,7 +34,7 @@ export const Main: FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {counterparty.map((row) => (
+            {context.value.map((row) => (
               <TableRow
                 key={row.id}
                 style={{cursor: 'pointer'}}
@@ -49,10 +50,8 @@ export const Main: FC = () => {
                 <TableCell align="right">{row.address}</TableCell>
                 <TableCell align="right">
                   <DeleteIcon style={{cursor: 'pointer'}} onClick={(e) => { 
-                    e.stopPropagation(); 
-                    let editedCounterparty = counterparty.filter(v => v.id !== row.id);
-                    localStorage.setItem('counterparty', JSON.stringify(editedCounterparty));
-                    setCounterparty(editedCounterparty); 
+                    e.stopPropagation();
+                    context.deleteCounterparty(row.id)
                   }}/>
                 </TableCell>
               </TableRow>
